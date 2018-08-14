@@ -104,9 +104,10 @@ int main()
     {
         Console::Init(); Console::Size(78,31); Console::Center(); Console::BufferSize(78,31); Console::Cursor(0);
         Console::Color(WHITE,BG_DARK_TURQUOISE); SplHead(cout,"C++ Assembler & Preprocessor"); Console::Color(YELLOW);
-        string I1 = Console::Drive()+":\\All C++ Files\\Graphical Projects\\C++ Assembler and Preprocessor\\Images\\ASM.afi";
-        string I2 = Console::Drive()+":\\All C++ Files\\Graphical Projects\\C++ Assembler and Preprocessor\\Images\\PP.afi" ;
-        string I3 = Console::Drive()+":\\All C++ Files\\Graphical Projects\\C++ Assembler and Preprocessor\\Images\\SET.afi";
+        string Img = Console::Path(); SetConsoleTitle("C++ Assembler and Preprocessor");
+        string I1 = Img.substr(0,Img.find_last_of('\\'))+"\\Images\\ASM.afi";
+        string I2 = Img.substr(0,Img.find_last_of('\\'))+"\\Images\\PP.afi" ;
+        string I3 = Img.substr(0,Img.find_last_of('\\'))+"\\Images\\SET.afi";
         GOTO(4,5); cout<<" > Select any one option by clicking on the buttons below : ";
         Image_Button B1("Assembly File"    ,I1,1 ,6,22,20,0,0,0,BLACK,GRAY),
                      B2("Preprocessor File",I2,27,6,22,20,0,0,0,BLACK,GRAY),
@@ -143,7 +144,7 @@ int main()
                                 Path = "\""+Path+"\""; File = Path.substr(Path.find_last_of('\\'));
                                 E1 = !Exist(Path.substr(1,Path.size()-5)+"ii");
                                 E2 = !Exist(Path.substr(1,Path.size()-5)+"s");
-                                Console::Execute(Compiler,Flags+" "+Path,CompilerPath);
+                                Console::Execute(CompilerPath.substr(0,CompilerPath.size()-1)+"\\"+Compiler+"\"",Flags+" "+Path);
                                 if(B1C && E1) { system(("del "+Path.substr(0,Path.size()-4)+"ii\"").c_str()); }
                                 else if(B2C && E2) { system(("del "+Path.substr(0,Path.size()-4)+"s\"").c_str()); }
                                 InfoBox("File Generation Complete!","Success",[](){});
