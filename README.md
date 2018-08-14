@@ -16,7 +16,7 @@ The following code generates assembly and/or preprocessor dump files from a C++ 
    - This function is similar in operation to 'Assembly File generation', but in this case, the preprocessor file is generated.
    - The extra files, if present before processing, are ignored. Any errors, if they exist, are not shown though.
 #### 4. Settings Panel
-   - The panel offers the user the ability to select a compiler between `GNU GCC (v.4.8+)` & `LLVM Clang (v3.5+)`.
+   - The panel offers the user the ability to select a compiler between `GNU GCC` (v.4.8+) & `LLVM Clang` (v3.5+).
    - The user must also specify the path to the compiler, by browsing for it in the computer. If an incorrect path is 
      mentioned, an error message is thrown.
    - The user can also specify additional flags to be passed to the compiler during file generation. The flags that are allowed 
