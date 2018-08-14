@@ -2,7 +2,7 @@
 #include <algorithm>
 using namespace std;
 
-const regex r1("-S (-l\\w+ )?(-masm=\\w+ )?-save-temps( -std=c\\+\\+(03|11|14|17|20|0x|1y|1z|2a))?");
+const regex r1("-S (-l\\w+ )*(-masm=(\\w|&)+ )?-save-temps( -std=c\\+\\+(03|11|14|17|20|0x|1y|1z|2a))?");
 const string msg = "Select the Compiler's path, by specifying the folder it is in."
                     + string("\nThe compiler's executable is usually inside the 'bin' folder.");
 
