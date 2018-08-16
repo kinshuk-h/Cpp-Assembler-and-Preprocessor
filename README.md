@@ -20,7 +20,7 @@ The following code generates assembly and/or preprocessor dump files from a C++ 
    - The user must also specify the path to the compiler, by browsing for it in the computer. If an incorrect path is 
      mentioned, an error message is thrown.
    - The user can also specify additional flags to be passed to the compiler during file generation. The flags that are allowed 
-     are `-std=c++<ver>`, `-std=gnu++<ver>` (GNU only), `-masm=<syntax>`, `-mllvm <syntax>` (Clang only), `-S` & `-save-temps`. 
+     are `-std=c++<ver>`, `-std=gnu++<ver>` (GNU only), `-masm=<syntax>`, `-mllvm <syntax>` (Clang only), `-fverbose-asm`, `-S` & `-save-temps`. 
      - Eg : ``` -std=gnu++17 -S -save-temps -masm=intel ```
      - Eg : ``` -std=c++14 -S -save-temps -mllvm --x86-asm-syntax=intel ```
 
