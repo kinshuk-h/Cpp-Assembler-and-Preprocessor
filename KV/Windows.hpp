@@ -7,10 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <vector>
-#include <locale>
 #include <string>
-#include <regex>
 #include <map>
 
 #define GOTO Console::CursorAt
@@ -52,6 +49,7 @@
 #define BG_DARK_GRAY      Color::Background::Dark_Gray
 #define BG_BLACK          Color::Background::Black
 
+/// Text Attribute Color Enumerations
 namespace Color
 {
   enum class Foreground : WORD { Black=0, Dark_Blue, Dark_Green, Dark_Turquoise, Brown, Purple, Olive,
@@ -60,8 +58,12 @@ namespace Color
                                  Dark_Gray=128, Blue=144, Green=160, Turquoise=176, Red=192, Magenta=208, Yellow=224, White=240 };
 };
 
+/// Enumeration for Executable Path Type ( Direct Path / Path from Environment Variable )
+enum class EXEType : bool { Direct = false, Environment = true };
+
 ///Border Items
-const unsigned char DC = 0xCA,UC = 0xCB,ULB = 201,DLB = 200,URB = 187,DRB = 188, HT = 205,VT = 186,LC = 0xCC,RC = 0xB9,NC = 0xCE;
+const unsigned char DC = 0xCA, UC = 0xCB, ULB = 201, DLB = 200, URB = 187, DRB = 188, HT = 205,
+                    VT = 186, LC = 0xCC, RC = 0xB9, NC = 0xCE;
 
 class Console
 {
@@ -189,62 +191,21 @@ public:
         DWORD fmt = ENABLE_EXTENDED_FLAGS|ENABLE_WINDOW_INPUT|ENABLE_MOUSE_INPUT;
         DWORD st; GetConsoleMode(in,&st); return (st&fmt)==fmt;
     }
-    /// Executes a Particular executable with supplied parameters.
-    static void Execute(std::string executable, std::string parameters="", std::string exe_directory = "")
+    /// Executes a Particular executable with supplied parameters. You can also mention Environment Variables.
+    static bool Execute(EXEType type, std::string executable, std::string_view parameters="",
+                        std::string_view exe_directory = "", bool show=false)
     {
         SHELLEXECUTEINFO rSEI ={0}; rSEI.cbSize = sizeof( rSEI ); rSEI.lpVerb = "open";
+        if(type == EXEType::Environment)
+        {
+            char temp[260]; GetEnvironmentVariable(executable.data(),temp,MAX_PATH);
+            executable.assign(temp);
+        }
         rSEI.lpFile = (!executable.empty()?executable.data():NULL);
         rSEI.lpParameters = (!parameters.empty()?parameters.data():NULL);
         rSEI.lpDirectory = (!exe_directory.empty()?exe_directory.data():NULL);
-        rSEI.nShow = SW_HIDE; rSEI.fMask = SEE_MASK_NOCLOSEPROCESS;
-        ShellExecuteEx( &rSEI ); WaitForSingleObject(rSEI.hProcess,INFINITE); CloseHandle(rSEI.hProcess);
-        // you should check for an error here
-        /*while( TRUE )
-        {
-            DWORD nStatus= MsgWaitForMultipleObjects(
-                        1, &rSEI.hProcess, FALSE,
-                        INFINITE, QS_ALLINPUT   // drop through on user activity
-            );
-            if ( nStatus == WAIT_OBJECT_0 ) {  // done: the program has ended
-                break;
-            }
-            MSG msg;     // else process some messages while waiting...
-            while( PeekMessage(&msg,NULL,0,0,PM_REMOVE) ){
-                DispatchMessage( &msg );
-            }
-        }  // launched process has exited
-
-        DWORD dwCode;
-        GetExitCodeProcess( rSEI.hProcess, &dwCode );  // ERRORLEVEL value
-        */
-        /*PROCESS_INFORMATION ePI={0};
-        STARTUPINFO         rSI={0};
-        rSI.cb=          sizeof( rSI );
-        rSI.dwFlags=     STARTF_USESHOWWINDOW;
-        rSI.wShowWindow= SW_SHOWNORMAL;  // or SW_HIDE or SW_MINIMIZED
-
-        BOOL fRet= CreateProcess(
-                (exe_directory.substr(0,exe_directory.size()-1)+std::string("\\")+executable+std::string("\"")).data(),  // program name
-                parameters.data(),     // ...and parameters
-                NULL, NULL,  // security stuff (use defaults)
-                TRUE,        // inherit handles (not important here)
-                0,           // don't need to set priority or other flags
-                NULL,        // use default Environment vars
-                NULL,        // don't set current directory
-                &rSI,        // where we set up the ShowWIndow setting
-                &ePI         // gets populated with handle info
-        );*/
-        /*CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-        SHELLEXECUTEINFO s;
-        s.cbSize = sizeof(s);
-        s.lpVerb = "open";
-        s.lpFile = executable.data();
-        s.lpDirectory = exe_directory.data();
-        s.lpParameters = parameters.data();
-        s.nShow = SW_SHOW;
-        /// CsWnd, "open", executable.data(), ,, SW_SHOWNORMAL))<=32
-        if(!(ShellExecuteEx()))
-            throw std::logic_error("ShellExecute : Error Occurred!");*/
+        rSEI.nShow = (show?SW_SHOW:SW_HIDE); rSEI.fMask = SEE_MASK_NOCLOSEPROCESS;
+        ShellExecuteEx( &rSEI ); WaitForSingleObject(rSEI.hProcess,INFINITE); return CloseHandle(rSEI.hProcess);
     }
     /// Toggles Cursor Visbility ON or OFF on the console.
     static void Cursor(bool flag = true)
