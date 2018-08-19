@@ -2,6 +2,9 @@
 #define UI_ELEMENT_HPP
 
 #include "Windows.hpp"
+#include <locale>
+#include <vector>
+#include <regex>
 
 /// Wrapper to enforce reserved space checks for use before printing to ostream object or reading from istream object.
 template <class T> auto& check(T& obj)
@@ -482,6 +485,10 @@ public:
     COORD Read(Type InputType=Type::Normal, Limit InputCond=Limit::Nil, std::regex Fmt = std::regex(""))
     {
         GOTO(RdCur,Y+1); COORD DR; INPUT_RECORD rec; DWORD ev; Console::Cursor(1); CONSOLE_SCREEN_BUFFER_INFO ci;
+        bool (*is_per_cond)(char, const std::locale&);
+        if     (InputCond == Limit::Alphabet) is_per_cond = std::isalpha;
+        else if(InputCond == Limit::Number) is_per_cond = std::isdigit;
+        else if(InputCond == Limit::AlphaNumeric) is_per_cond = std::isalnum;
         while(true)
         {
             ReadConsoleInput(Console::In(),&rec,1,&ev); GetConsoleScreenBufferInfo(Console::Out(),&ci);
@@ -494,7 +501,16 @@ public:
                         if(cache.size()>1) { cache.resize(cache.size()-1); GOTO(RdCur-1,Y+1);
                         std::cout<<" "; GOTO(RdCur-1,Y+1); RdCur--; } else {cache=""; Fill("");}
                     }
-                    else if(rec.Event.KeyEvent.wVirtualKeyCode==VK_RETURN) { DR = {-1,-1}; return DR; }
+                    else if(rec.Event.KeyEvent.wVirtualKeyCode==VK_RETURN)
+                    {
+                        DR = {-1,-1};
+                        if(InputType == Type::Restricted && InputCond == Limit::Custom)
+                        {
+                            if(regex_match(cache,Fmt)) return DR;
+                            else {cache=""; RdCur = X+2; Fill("");}
+                        }
+                        else return DR;
+                    }
                     else if(rec.Event.KeyEvent.uChar.AsciiChar!=0)
                     {
                         if(RdCur<(X+Size))
@@ -508,25 +524,21 @@ public:
                             { std::cout<<'*'; cache += rec.Event.KeyEvent.uChar.AsciiChar; RdCur++; }
                             else if(InputType == Type::Restricted)
                             {
-                                if(InputCond == Limit::Alphabet)
+                                if(InputCond != Limit::Custom)
                                 {
-
+                                    if(is_per_cond(rec.Event.KeyEvent.uChar.AsciiChar,std::cout.getloc()))
+                                    {
+                                        std::cout<<rec.Event.KeyEvent.uChar.AsciiChar;
+                                        cache += rec.Event.KeyEvent.uChar.AsciiChar; RdCur++;
+                                    }
                                 }
-                                else if(InputCond == Limit::Number)
+                                else
                                 {
-
-                                }
-                                else if(InputCond == Limit::AlphaNumeric)
-                                {
-
-                                }
-                                else if(InputCond == Limit::Custom)
-                                {
-
+                                    std::cout<<rec.Event.KeyEvent.uChar.AsciiChar;
+                                    cache += rec.Event.KeyEvent.uChar.AsciiChar; RdCur++;
                                 }
                             }
-                            else
-                            { std::cout<<' '; cache += rec.Event.KeyEvent.uChar.AsciiChar; RdCur++; }
+                            else { std::cout<<' '; cache += rec.Event.KeyEvent.uChar.AsciiChar; RdCur++; }
                         }
                     }
                 }
@@ -534,7 +546,16 @@ public:
             else if(rec.EventType==MOUSE_EVENT)
             {
                 DR = rec.Event.MouseEvent.dwMousePosition;
-                if(rec.Event.MouseEvent.dwButtonState==FROM_LEFT_1ST_BUTTON_PRESSED && (!IsClicked(DR))) return DR;
+                if(rec.Event.MouseEvent.dwButtonState==FROM_LEFT_1ST_BUTTON_PRESSED && (!IsClicked(DR))
+                   && rec.Event.MouseEvent.dwEventFlags==0)
+                {
+                    if(InputType == Type::Restricted && InputCond == Limit::Custom)
+                    {
+                        if(regex_match(cache,Fmt)) return DR;
+                        else {cache=""; RdCur = X+2; Fill("");}
+                    }
+                    else return DR;
+                }
             }
         }
     }
