@@ -2,7 +2,8 @@
 #include <algorithm>
 using namespace std;
 
-const regex r1("-S (-l\\w+ )*(-masm=(\\w|&)+ )?-save-temps( -std=c\\+\\+(03|11|14|17|20|0x|1y|1z|2a))?");
+const regex c_gnu("-S (-fverbose-asm )?(-masm=(\\w|&)+ )?-save-temps( -std=(c\\+\\+|gnu\\+\\+)(03|11|14|17|20|0x|1y|1z|2a))?");
+const regex c_clang("(--(\\w+|-|&|=)+ )?-S (-fverbose-asm )?((-masm(\\w|&|-|=)+)|(-mllvm) )?-save-temps( (-std=c\\+\\+|gnu\\+\\+)(03|11|14|17|20|0x|1y|1z|2a))?");
 const string msg = "Select the Compiler's path, by specifying the folder it is in."
                     + string("\nThe compiler's executable is usually inside the 'bin' folder.");
 
@@ -23,8 +24,16 @@ bool Check(const string& Compiler, const string& CompilerPath, const string& Fla
 {
     if(!Exist(CompilerPath.substr(1,CompilerPath.size()-2)+"\\"+Compiler))
     { ErrorBox("Compiler could not be detected!","Error",[](){}); return false; }
-    if(!regex_match(flag_sort(Flags),r1))
-    { ErrorBox("Invalid Flags for the Compiler! \n(Note: Did you include '-S -save-temps'?)","Error",[](){}); return false; }
+    if(Compiler=="g++.exe")
+    {
+        if(!regex_match(flag_sort(Flags),c_gnu))
+        { ErrorBox("Invalid Flags for the Compiler!\n(Note: Did you include '-S -save-temps'?)","Error",[](){}); return false; }
+    }
+    else
+    {
+        if(!regex_match(flag_sort(Flags),c_clang))
+        { ErrorBox("Invalid Flags for the Compiler!\n(Note: Did you include '-S -save-temps'?)","Error",[](){}); return false; }
+    }
     return true;
 }
 
@@ -38,14 +47,14 @@ vector<string> CompilerInfo()
 
 void Settings(string& Compiler, string& CompilerPath, string& Flags)
 {
-    system("cls"); Console::Size(78,23); Console::Center(); Console::BufferSize(78,23); Console::Cursor(0);
+    system("cls"); Console::Size(90,23); Console::Center(); Console::BufferSize(90,23); Console::Cursor(0);
     Console::Color(WHITE,BG_DARK_TURQUOISE); SplHead(cout,"Settings"); Console::Color(YELLOW);
-    GOTO(4,4); cout<<" < Select the type, path and additional flags for the compiler here > ";
-    Radio_Button RC1(30,7,BLUE,WHITE), RC2(50,7,BLUE,WHITE); RC1.Print(); RC2.Print(); Console::Color(RED);
-    if(Compiler=="g++.exe") RC1.Check(1); else RC2.Check(1); Box P1(26,10,47), P2(26,13,47);
+    GOTO(10,4); cout<<" < Select the type, path and additional flags for the compiler here > ";
+    Radio_Button RC1(35,7,BLUE,WHITE), RC2(55,7,BLUE,WHITE); RC1.Print(); RC2.Print(); Console::Color(RED);
+    if(Compiler=="g++.exe") RC1.Check(1); else RC2.Check(1); Box P1(26,10,59), P2(26,13,59);
     Console::Color(WHITE); P1.Fill(CompilerPath); P2.Fill(Flags);
-    Button B1("SAVE",12,18,14,1,DARK_GREEN,WHITE), B2("RETURN",46,18,14,1,MAGENTA,WHITE); B1.Print(); B2.Print();
-    GOTO(3, 8); cout<<"> Type of Compiler  =  "; GOTO(34,8); cout<<"GNU GCC"; GOTO(54,8); cout<<"LLVM Clang";
+    Button B1("SAVE",12,18,14,1,DARK_GREEN,WHITE), B2("RETURN",60,18,14,1,MAGENTA,WHITE); B1.Print(); B2.Print();
+    GOTO(3, 8); cout<<"> Type of Compiler  =  "; GOTO(39,8); cout<<"GNU GCC"; GOTO(59,8); cout<<"LLVM Clang";
     GOTO(3,11); cout<<"> Path of Compiler  =  "; GOTO(3,14); cout<<"> Additional Flags  :  ";
     INPUT_RECORD rec; DWORD ev; COORD DC; Console::MouseInput(1); string s;
     while(true)
@@ -144,10 +153,17 @@ int main()
                                 Path = "\""+Path+"\""; File = Path.substr(Path.find_last_of('\\'));
                                 E1 = !Exist(Path.substr(1,Path.size()-5)+"ii");
                                 E2 = !Exist(Path.substr(1,Path.size()-5)+"s");
-                                Console::Execute(CompilerPath.substr(0,CompilerPath.size()-1)+"\\"+Compiler+"\"",Flags+" "+Path);
-                                if(B1C && E1) { system(("del "+Path.substr(0,Path.size()-4)+"ii\"").c_str()); }
-                                else if(B2C && E2) { system(("del "+Path.substr(0,Path.size()-4)+"s\"").c_str()); }
-                                InfoBox("File Generation Complete!","Success",[](){});
+                                if(Console::Execute(EXEType::Direct, CompilerPath.substr(0,CompilerPath.
+                                    size()-1)+"\\"+Compiler+"\"", Flags+" "+Path))
+                                {
+                                    if(B1C && E1)
+                                        Console::Execute(EXEType::Environment,"COMSPEC","/c del "
+                                                         +Path.substr(0,Path.size()-4)+"ii\"");
+                                    else if(B2C && E2)
+                                        Console::Execute(EXEType::Environment,"COMSPEC","/c del "
+                                                         +Path.substr(0,Path.size()-4)+"s\"");
+                                    InfoBox("File Generation Complete!","Success",[](){});
+                                }
                             }
                         }
                         else if(B3C)
